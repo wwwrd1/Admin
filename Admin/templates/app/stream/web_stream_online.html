@@ -1,0 +1,417 @@
+{% extends "app/base_site.html" %}
+
+{% block title %} 在线视频流 {% endblock title %}
+
+{% block stylesheets %}
+  {{ block.super }}
+  <style>
+    /* 隐藏顶部导航栏和左侧菜单 */
+    .nav_menu,
+    .left_col,
+    .nav-sm .container.body .right_col {
+      display: none !important;
+    }
+    
+    /* 调整主内容区域 */
+    .right_col {
+      margin-left: 0 !important;
+      padding: 0 !important;
+      min-height: 100vh !important;
+      margin-top: 0 !important;
+    }
+    
+    /* 确保body占满整个窗口 */
+    .container.body {
+      min-height: 100vh !important;
+      padding: 0 !important;
+    }
+    
+    /* 移除body的左边距 */
+    .nav-md .container.body .right_col {
+      margin-left: 0 !important;
+    }
+    
+    /* 调整面板样式 */
+    .x_panel {
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      height: 100vh !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    
+    .x_title {
+      margin: 0 !important;
+      padding: 5px 10px !important;
+      border: none !important;
+      background: #000;
+      color: #fff;
+      flex: 0 0 auto !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+    
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 33.33%);
+      gap: 1px;
+      padding: 1px;
+      background: #000;
+      flex: 1 !important;
+      overflow: hidden !important;
+    }
+    
+    .video-card {
+      background: #000;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 16/9;
+    }
+    
+    .video-body {
+      height: 100%;
+      background: #000;
+    }
+    
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    /* 调整表格视图样式 */
+    .table-view {
+      display: none;
+      flex: 1 !important;
+      overflow: auto !important;
+    }
+    
+    /* 调整按钮样式 */
+    .btn-sm {
+      padding: 2px 8px;
+      margin-top: 2px;
+      color: #fff !important;
+      border-color: #666 !important;
+    }
+    
+    /* 调整按钮悬停效果 */
+    .btn-sm:hover {
+      background-color: #444 !important;
+      border-color: #888 !important;
+    }
+    
+    /* 调整加载图标 */
+    .top_loading_img {
+      height: 16px;
+      margin-right: 5px;
+    }
+    
+    /* 调整链接颜色 */
+    .x_title a,
+    .x_title h2 {
+      color: #fff !important;
+    }
+    
+    /* 添加返回按钮样式 */
+    .back-button {
+      padding: 2px 8px;
+      margin-right: 10px;
+      color: #fff !important;
+      background-color: transparent;
+      border: 1px solid #666;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    
+    .back-button:hover {
+      background-color: #444;
+      border-color: #888;
+    }
+    
+    .back-button i {
+      margin-right: 5px;
+    }
+    
+    /* 添加分页控制样式 */
+    .pagination-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 15px;
+      border-radius: 20px;
+    }
+    
+    .page-button {
+      color: #fff;
+      background: transparent;
+      border: 1px solid #666;
+      border-radius: 3px;
+      padding: 2px 10px;
+      cursor: pointer;
+    }
+    
+    .page-button:hover {
+      background: #444;
+    }
+    
+    .page-info {
+      color: #fff;
+      margin: 0 10px;
+      line-height: 24px;
+    }
+  </style>
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <button onclick="window.location.href='/'" class="back-button">
+                <i class="fa fa-arrow-left"></i> 返回
+              </button>
+              <h2>在线视频流
+                <span id="top_loading"><img class="top_loading_img" src="/static/images/load.gif" alt="loading">加载中</span>
+                <span id="top_msg"></span>
+              </h2>
+              <button style="margin-left:10px;" type="button" onclick="reload()" class="btn btn-default btn-sm">刷新</button>
+              <button style="margin-left:5px;" type="button" onclick="toggleView()" class="btn btn-info btn-sm">切换视图</button>
+              <div class="clearfix"></div>
+            </div>
+
+            <!-- 九宫格视图 -->
+            <div id="grid-view" class="video-grid"></div>
+
+            <!-- 添加分页控制 -->
+            <div id="pagination-controls" class="pagination-controls" style="display: none;">
+              <button class="page-button" onclick="prevPage()">上一页</button>
+              <span class="page-info">第 <span id="current-page">1</span> 页，共 <span id="total-pages">1</span> 页</span>
+              <button class="page-button" onclick="nextPage()">下一页</button>
+            </div>
+
+            <!-- 表格视图 -->
+            <div id="table-view" class="table-view">
+              <div class="x_content">
+                <div class="table-responsive">
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr class="headings">
+                        <th class="column-title"># </th>
+                        <th class="column-title">视频来源 </th>
+                        <th class="column-title">视频流 </th>
+                        <th class="column-title">在线人数 </th>
+                        <th class="column-title">入口带宽 </th>
+                        <th class="column-title">视频信息 </th>
+                        <th class="column-title last">音频信息 </th>
+                      </tr>
+                    </thead>
+                    <tbody id="data"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ block.super }}
+  <script src="/static/lib/wsPlayer/mp4box.all.min.js"></script>
+  <script src="/static/lib/wsPlayer/wsPlayer.js"></script>
+  <script>
+    let eleData = $("#data");
+    let ele_top_loading = $("#top_loading");
+    let ele_top_msg = $("#top_msg");
+    let gridView = $("#grid-view");
+    let tableView = $("#table-view");
+    let players = {};
+    let currentPage = 1;
+    let totalPages = 1;
+    let allStreams = [];
+    const STREAMS_PER_PAGE = 9;
+
+    // 修改初始视图设置
+    $(document).ready(function() {
+        // 默认显示列表视图
+        gridView.hide();
+        tableView.show();
+        f_getOnline(); // 初始加载数据
+    });
+
+    function toggleView() {
+        if (gridView.is(":visible")) {
+            gridView.hide();
+            tableView.show();
+            $("#pagination-controls").hide();
+            // 停止所有视频播放
+            Object.values(players).forEach(player => {
+                if (player) player.close();
+            });
+        } else {
+            gridView.show();
+            tableView.hide();
+            if (allStreams.length > STREAMS_PER_PAGE) {
+                $("#pagination-controls").show();
+            }
+        }
+        // 切换视图后重新加载数据
+        f_getOnline();
+    }
+
+    function createVideoPlayer(stream, index) {
+      const videoHtml = `
+        <div class="video-card">
+          <div class="video-body">
+            <video id="video-${index}" controls></video>
+          </div>
+        </div>
+      `;
+      gridView.append(videoHtml);
+
+      // 创建播放器
+      if (stream.wsMp4Url) {
+        players[index] = new wsPlayer(`video-${index}`, stream.wsMp4Url);
+        players[index].open();
+      }
+    }
+
+    function updatePagination() {
+        totalPages = Math.ceil(allStreams.length / STREAMS_PER_PAGE);
+        $("#current-page").text(currentPage);
+        $("#total-pages").text(totalPages);
+        $("#pagination-controls").toggle(allStreams.length > STREAMS_PER_PAGE);
+    }
+    
+    function showCurrentPage() {
+        // 清理现有播放器
+        Object.values(players).forEach(player => {
+            if (player) player.close();
+        });
+        players = {};
+        
+        // 清空视图
+        gridView.empty();
+        
+        // 计算当前页的视频范围
+        const startIndex = (currentPage - 1) * STREAMS_PER_PAGE;
+        const endIndex = Math.min(startIndex + STREAMS_PER_PAGE, allStreams.length);
+        
+        // 显示当前页的视频
+        for (let i = startIndex; i < endIndex; i++) {
+            createVideoPlayer(allStreams[i], i);
+        }
+        
+        updatePagination();
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            showCurrentPage();
+        }
+    }
+    
+    function nextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            showCurrentPage();
+        }
+    }
+
+    function f_getOnline() {
+      ele_top_loading.show();
+      
+      let viewType = gridView.is(":visible") ? "grid" : "list";
+      
+      $.ajax({
+        url: '/stream/getOnline',
+        type: "get",
+        async: true,
+        data: {
+          view_type: viewType
+        },
+        dataType: "json",
+        timeout: 0,
+        error: function() {
+          ele_top_loading.hide();
+          myAlert("网络异常，请确定网络正常！", "error");
+        },
+        success: function(res) {
+          ele_top_loading.hide();
+          let top_msg = res.top_msg;
+          ele_top_msg.html(top_msg);
+
+          if (1000 === res.code) {
+            let data = res.data;
+            
+            if (gridView.is(":visible")) {
+              allStreams = data;
+              currentPage = 1;
+              showCurrentPage();
+            } else {
+              // 表格视图不需要分页
+              updateTableView(data);
+            }
+          } else {
+            myAlert(res.msg, "error");
+          }
+        }
+      });
+    }
+
+    function updateTableView(data) {
+      let item_html = "";
+      if (data.length === 0) {
+        item_html = "<tr class=\"even pointer\"><td colspan='7'>暂无数据</td></tr>";
+      } else {
+        data.forEach((d, i) => {
+          item_html += `<tr class="even pointer">
+            <td>${i + 1}</td>
+            <td>${d.source_type === 1 ? 
+              `<a href="javascript:void(0)" onclick="f_edit('${d.source.code}')">${d.source_nickname}</a>` : 
+              '（用户推流）'}</td>
+            <td><a href="javascript:void(0)" onclick="f_open_player('${d.app}','${d.name}')">
+              <i class="fa fa-play"></i> ${d.app}/${d.name}</a></td>
+            <td>${d.clients}</td>
+            <td>${d.produce_speed}</td>
+            <td>${d.video}</td>
+            <td>${d.audio}</td>
+          </tr>`;
+        });
+      }
+      eleData.html(item_html);
+    }
+
+    function f_open_player(app, name) {
+      // 在新窗口打开播放器页面
+      window.open(`/stream/player?app=${app}&name=${name}`, '_blank');
+    }
+
+    function f_edit(code) {
+      // 打开编辑页面
+      window.location.href = `/stream/edit?code=${code}`;
+    }
+
+    // 页面关闭时清理资源
+    window.addEventListener('beforeunload', function() {
+      Object.values(players).forEach(player => {
+        if (player) player.close();
+      });
+    });
+  </script>
+{% endblock javascripts %}
+
