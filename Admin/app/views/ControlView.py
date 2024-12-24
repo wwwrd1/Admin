@@ -2,6 +2,8 @@ from app.views.ViewsBase import *
 from app.models import *
 from django.shortcuts import render,redirect
 from app.utils.Utils import gen_random_code_s
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 def web_controls(request):
     context = {
@@ -65,3 +67,15 @@ def web_edit_control(request):
                       {"msg": "请通过布控管理进入", "is_success": False, "redirect_url": "/controls"})
 
     return render(request, 'app/control/web_add_control.html', context)
+
+
+@csrf_exempt
+def generate_control_code(request):
+    """
+    生成布控编号的API
+    """
+    if request.method == 'POST':
+        task_type = request.POST.get('task_type', 'control_bike')
+        new_code = gen_random_code_s(task_type)
+        return JsonResponse({'code': new_code})
+    return JsonResponse({'error': 'Invalid request'}, status=400)

@@ -90,9 +90,20 @@
                 {% endif %}
 
                     <div class="form-group">
+                      <label class="control-label col-md-3 col-sm-3 col-xs-12">任务类型</label>
+                      <div class="col-md-9 col-sm-9 col-xs-12">
+                          <select id="task_type" class="form-control" onchange="updateControlCode()">
+                              <option value="control_bike">自行车识别</option>
+                              <option value="control_person">人体识别</option>
+                              <option value="control_goggle">护目镜识别</option>
+                          </select>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
                       <label class="control-label col-md-3 col-sm-3 col-xs-12">布控编号</label>
                       <div class="col-md-9 col-sm-9 col-xs-12">
-                          <span style="height: 34px;line-height: 34px;padding: 6px 0;">{{ control.code }}</span>
+                          <span id="control_code" style="height: 34px;line-height: 34px;padding: 6px 0;">{{ control.code }}</span>
                       </div>
                     </div>
 
@@ -314,7 +325,7 @@
     class MyLine{
         x2;
         y2;
-        //构造方法设置第一个点
+        //构造方法设置第���个点
         constructor(x,y) {
           this.x=x;
           this.y=y;
@@ -488,7 +499,7 @@
     function f_postHandleControl() {
         streamCode = eleSelectStream.val().trim();//typeof string
         if(streamCode==="-1"){
-            myAlert("暂无视频流","error");
+            myAlert("暂���视频流","error");
             return;
         }else if(streamCode==="0"){
             myAlert("请选择视频流","error");
@@ -659,6 +670,32 @@
         }else{//新增布控
             f_adjustVideoCanvas();
         }
+    }
+
+    $(document).ready(function() {
+        // 设置默认选中的任务类型并生成编号
+        $('#task_type').val('control_bike');
+        updateControlCode();
+    });
+
+    function updateControlCode() {
+        var taskType = $('#task_type').val();
+        $.ajax({
+            url: '/generate_control_code/',
+            type: 'POST',
+            data: {
+                'task_type': taskType,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                $('#control_code').text(response.code);
+                old_control_code = response.code;  // 更新old_control_code变量
+            },
+            error: function(xhr, errmsg, err) {
+                console.log('Error:', errmsg);
+                myAlert("生成编号失败", "error");
+            }
+        });
     }
 </script>
 

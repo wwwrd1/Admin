@@ -86,14 +86,27 @@ def GenImageFileName(prefix='', suffix=''):
 
 def gen_random_code_s(prefix):
     """
-    产生随机编号（服务于数据表的的编号）
-    :param prefix: 编码前缀
-    :return:
+    生成任务编号
+    :param prefix: 任务类型前缀
+    :return: 任务编号
     """
-    val = str(uuid.uuid5(uuid.uuid1(), str(uuid.uuid1())))
-    a = val.split("-")[0]
-    code = "%s%s%d" % (prefix,a, random.randint(10000, 99999))
-
+    # 任务类型映射
+    task_types = {
+        "control_bike": "BIKE",    # 自行车识别任务
+        "control_person": "PERSON", # 人体识别任务
+        "control_goggle": "GOGGLE"  # 护目镜识别任务
+    }
+    
+    timestamp = time.strftime("%Y%m%d%H%M")  # 精确到分钟即可
+    random_num = str(random.randint(100, 999))
+    
+    # 获取任务类型缩写
+    type_code = task_types.get(prefix, "UNKNOWN")
+    
+    # 格式：任务类型_时间戳_随机数
+    # 例如：BIKE_202403181430_123
+    code = f"{type_code}_{timestamp}_{random_num}"
+    
     return code
 
 def gen_random_code(prefix):

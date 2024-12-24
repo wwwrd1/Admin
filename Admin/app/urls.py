@@ -33,6 +33,7 @@ urlpatterns = [
     path('controls', web_controls),
     path('control/add', web_add_control),
     path('control/edit', web_edit_control),
+    path('generate_control_code/', generate_control_code, name='generate_control_code'),
 
     path('profile', web_profile),
     path('login', web_login),
