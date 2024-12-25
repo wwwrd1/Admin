@@ -54,12 +54,14 @@
     
     .video-grid {
       display: grid;
-      grid-template-columns: repeat(3, 33.33%);
-      gap: 1px;
-      padding: 1px;
+      grid-template-columns: repeat(3, 30%);
+      grid-template-rows: auto auto auto;
+      gap: 10px;
+      padding: 15px;
       background: #000;
       flex: 1 !important;
       overflow: hidden !important;
+      justify-content: center;
     }
     
     .video-card {
@@ -67,6 +69,7 @@
       overflow: hidden;
       position: relative;
       aspect-ratio: 16/9;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
     
     .video-body {
@@ -137,19 +140,19 @@
     
     /* 添加分页控制样式 */
     .pagination-controls {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      display: flex;
+      position: static;
+      display: inline-flex;
       gap: 10px;
-      background: rgba(0, 0, 0, 0.5);
+      background: transparent;
       padding: 5px 15px;
-      border-radius: 20px;
+      margin-left: 10px;
+      align-items: center;
+      white-space: nowrap;
     }
     
     .page-button {
+      min-width: 60px;
+      text-align: center;
       color: #fff;
       background: transparent;
       border: 1px solid #666;
@@ -163,9 +166,22 @@
     }
     
     .page-info {
+      min-width: 120px;
+      text-align: center;
       color: #fff;
       margin: 0 10px;
       line-height: 24px;
+    }
+    
+    /* 添加底部信息区域样式 */
+    .info-area {
+      grid-column: 1 / span 3;
+      background: #1a1a1a;
+      padding: 30px;
+      color: #fff;
+      min-height: 250px;
+      margin-top: 20px;
+      border-radius: 8px;
     }
   </style>
 {% endblock stylesheets %}
@@ -186,17 +202,28 @@
               </h2>
               <button style="margin-left:10px;" type="button" onclick="reload()" class="btn btn-default btn-sm">刷新</button>
               <button style="margin-left:5px;" type="button" onclick="toggleView()" class="btn btn-info btn-sm">切换视图</button>
+              
+              <!-- 分页控件移到这里 -->
+              <div id="pagination-controls" class="pagination-controls">
+                <button class="page-button" onclick="prevPage()">上一页</button>
+                <span class="page-info">第 <span id="current-page">1</span> 页，共 <span id="total-pages">1</span> 页</span>
+                <button class="page-button" onclick="nextPage()">下一页</button>
+              </div>
+              
               <div class="clearfix"></div>
             </div>
 
-            <!-- 九宫格视图 -->
-            <div id="grid-view" class="video-grid"></div>
-
-            <!-- 添加分页控制 -->
-            <div id="pagination-controls" class="pagination-controls" style="display: none;">
-              <button class="page-button" onclick="prevPage()">上一页</button>
-              <span class="page-info">第 <span id="current-page">1</span> 页，共 <span id="total-pages">1</span> 页</span>
-              <button class="page-button" onclick="nextPage()">下一页</button>
+            <!-- 修改视频网格布局,添加底部信息区域 -->
+            <div id="grid-view" class="video-grid">
+              <!-- 视频卡片将动态插入这里 -->
+              
+              <!-- 添加底部信息区域 -->
+              <div class="info-area">
+                <h3>视频流信息</h3>
+                <div id="stream-info">
+                  <!-- 这里可以添加视频流的详细信息 -->
+                </div>
+              </div>
             </div>
 
             <!-- 表格视图 -->
@@ -242,7 +269,7 @@
     let currentPage = 1;
     let totalPages = 1;
     let allStreams = [];
-    const STREAMS_PER_PAGE = 9;
+    const STREAMS_PER_PAGE = 6;
 
     // 修改初始视图设置
     $(document).ready(function() {
@@ -314,6 +341,13 @@
         for (let i = startIndex; i < endIndex; i++) {
             createVideoPlayer(allStreams[i], i);
         }
+        
+        // 添加底部信息区域
+        const infoArea = $('<div class="info-area"><h3>视频流信息</h3><div id="stream-info"></div></div>');
+        gridView.append(infoArea);
+        
+        // 更新底部信息区域的内容
+        updateStreamInfo();
         
         updatePagination();
     }
@@ -406,7 +440,46 @@
       window.location.href = `/stream/edit?code=${code}`;
     }
 
-    // 页面关闭时清理资源
+    // 添加更新信息区域的函数
+    function updateStreamInfo() {
+        const streamInfo = $('#stream-info');
+        const totalStreams = allStreams.length;
+        const activeStreams = Object.keys(players).length;
+        
+        let html = `
+            <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+                <div class="info-block">
+                    <h4>视频流统计</h4>
+                    <p>总视频流数量: ${totalStreams}</p>
+                    <p>当前页面活动视频流: ${activeStreams}</p>
+                    <p>当前页面: ${currentPage} / ${totalPages}</p>
+                </div>
+                <div class="info-block">
+                    <h4>系统状态</h4>
+                    <p>服务器运行时间: ${formatUptime()}</p>
+                    <p>CPU使用率: ${getCPUUsage()}%</p>
+                    <p>内存使用率: ${getMemoryUsage()}%</p>
+                </div>
+            </div>
+        `;
+        
+        streamInfo.html(html);
+    }
+
+    // 添加一些辅助函数来模拟系统状态数据
+    function formatUptime() {
+        return "12小时23分钟";
+    }
+
+    function getCPUUsage() {
+        return Math.floor(Math.random() * 30 + 20); // 模拟20-50%的CPU使用率
+    }
+
+    function getMemoryUsage() {
+        return Math.floor(Math.random() * 40 + 30); // 模拟30-70%的内存使用率
+    }
+
+    // 页面关闭清理资源
     window.addEventListener('beforeunload', function() {
       Object.values(players).forEach(player => {
         if (player) player.close();
