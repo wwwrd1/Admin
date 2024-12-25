@@ -93,8 +93,11 @@ def gen_random_code_s(prefix):
     # 任务类型映射
     task_types = {
         "control_bike": "BIKE",    # 自行车识别任务
-        "control_person": "PERSON", # 人体识别任务
-        "control_goggle": "GOGGLE"  # 护目镜识别任务
+        "control_person": "PERSON", # 人类识别任务
+        "control_goggle": "GOGGLE", # 护目镜识别任务
+        "control_helmet": "HELMET", # 安全帽识别任务
+        "control_meeting": "MEETING", # 晨会识别任务
+        "control_refl": "REFLECTION" # 反光衣识别任务
     }
     
     timestamp = time.strftime("%Y%m%d%H%M")  # 精确到分钟即可
