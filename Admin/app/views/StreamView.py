@@ -2,23 +2,77 @@ from app.views.ViewsBase import *
 from app.models import *
 from django.shortcuts import render, redirect
 from app.utils.Utils import buildPageLabels, gen_random_code_s
+from app.views.ViewsBase import *
+from app.models import *
+from django.shortcuts import render, redirect
+from app.utils.Utils import buildPageLabels, gen_random_code_s
+from datetime import timedelta
+from django.http import JsonResponse
+
 
 def online(request):
     # 获取所有在线流，初始加载时显示所有流
     mediaServerState, streams = __getAllOnlineStream(is_filter_analyzer=True, only_analyzer=False)
-    
+    # # 获取当前时间
+    # now = timezone.now()
+    # x_hour_ago = now - timedelta(hours=2)
+    # # 统计不同类型的数据
+    # bike_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="BIKE").count()
+    # person_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="PERSON").count()
+    # goggle_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="GOGGLE").count()
+    # helmet_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="HELMET").count()
+    # meeting_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="MEETING").count()
+    # reflection_count = Alarm.objects.filter(create_time__gte=x_hour_ago,control_code__startswith="REFLECTION").count()
+    # #打印数据
+    # print('___________________________________')
+    # print(bike_count)
+    # print(person_count)
+    # print(goggle_count)
+    # print(helmet_count)
+    # print(meeting_count)
+    # print(reflection_count)
+
     # 为每个流添加完整的播放地址
     for stream in streams:
         stream['rtspUrl'] = g_media.get_rtspUrl(stream['app'], stream['name'])
         stream['hlsUrl'] = g_media.get_hlsUrl(stream['app'], stream['name'])
         stream['wsMp4Url'] = g_media.get_wsMp4Url(stream['app'], stream['name'])
         stream['httpMp4Url'] = g_media.get_httpMp4Url(stream['app'], stream['name'])
-    
+
     context = {
         'streams': streams,
-        'mediaServerState': mediaServerState
+        'mediaServerState': mediaServerState,
+        # 'bike_count': bike_count,
+        # 'person_count': person_count,
+        # 'goggle_count': goggle_count,
+        # 'helmet_count': helmet_count,
+        # 'meeting_count': meeting_count,
+        # 'reflection_count': reflection_count,
+        # 'time':x_hour_ago,
     }
     return render(request, 'app/stream/web_stream_online.html', context)
+
+
+def get_counts(request):
+    now = timezone.now()
+    x_hour_ago = now - timedelta(hours=5)
+    bike_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="BIKE").count()
+    person_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="PERSON").count()
+    goggle_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="GOGGLE").count()
+    helmet_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="HELMET").count()
+    meeting_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="MEETING").count()
+    reflection_count = Alarm.objects.filter(create_time__gte=x_hour_ago, control_code__startswith="REFLECTION").count()
+
+    return JsonResponse({
+        'bike_count': bike_count,
+        'person_count': person_count,
+        'goggle_count': goggle_count,
+        'helmet_count': helmet_count,
+        'meeting_count': meeting_count,
+        'reflection_count': reflection_count,
+        'time': now,
+        'stare_time': x_hour_ago,
+    })
 
 
 def index(request):

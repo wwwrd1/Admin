@@ -9,6 +9,7 @@ class Alarm(models.Model):
     image_path = models.CharField(max_length=200, verbose_name='主图存储路径')
     create_time = models.DateTimeField(auto_now_add=True,verbose_name='创建时间')
     state = models.IntegerField(verbose_name='状态') # 0 未读
+    objects = models.Manager()
 
     def __repr__(self):
         return self.desc

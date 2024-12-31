@@ -26,7 +26,6 @@
       margin: 0 !important;
       max-width: 100% !important;
       width: 100% !important;
-      background: #000 !important;
     }
     
     /* 调整右侧内容区域 */
@@ -36,7 +35,6 @@
       width: 100vw !important;
       max-width: 100vw !important;
       min-height: 100vh !important;
-      background: #000 !important;
     }
     
     /* 调整行和列的边距 */
@@ -59,7 +57,7 @@
       border-radius: 0 !important;
       width: 100vw !important;
       max-width: 100vw !important;
-      background: #000 !important;
+      background: none !important;
     }
     
     /* 调整视频网格容器 */
@@ -76,16 +74,18 @@
     
     /* 调整表格视图容器 */
     .table-view {
-      position: absolute !important;
+      position: fixed !important;
       top: 50px !important;
       left: 0 !important;
       right: 0 !important;
       bottom: 0 !important;
       background: #fff !important;
-      padding: 20px !important;
+      margin: 0 !important;
+      padding: 0 !important;
       overflow: auto !important;
       display: none;
-      z-index: 1000 !important;
+      z-index: 900 !important;
+      border-top: none !important;
     }
     
     /* 调整顶部标题栏 */
@@ -142,18 +142,24 @@
       max-width: 100vw !important;
       padding: 0 !important;
       margin: 0 !important;
+      background: none !important;
+      position: relative !important;
+      top: 0 !important;
     }
     
     /* 调整表格响应式容器 */
     .table-responsive {
       margin: 0 !important;
+      padding: 0 !important;
       border: none !important;
-      width: 100% !important;
+      background: #fff !important;
+      position: relative !important;
+      z-index: 901 !important;
     }
     
     /* 调整信息区域边距 */
     .info-area {
-      height: 30% !important;
+      height: 35% !important;
       background: #1a1a1a;
       margin: 2px !important;
       border-radius: 4px;
@@ -221,18 +227,29 @@
     
     .table {
       margin-bottom: 0 !important;
+      border-top: none !important;
+      border-collapse: collapse !important;
     }
     
     .table > thead > tr > th {
-      background-color: #f5f5f5 !important;
-      border-bottom: 2px solid #ddd !important;
-      color: #333 !important;
+      position: sticky !important;
+      top: 50px !important;
+      background-color: #f8f9fa !important;
+      border: none !important;
+      border-bottom: 1px solid #dee2e6 !important;
+      color: #495057 !important;
+      font-weight: 600 !important;
+      padding: 15px 8px !important;
+      white-space: nowrap !important;
+      z-index: 901 !important;
     }
     
     .table > tbody > tr > td {
-      vertical-align: middle !important;
-      color: #333 !important;
-      border-color: #ddd !important;
+      padding: 12px 8px !important;
+      border: none !important;
+      border-bottom: 1px solid #dee2e6 !important;
+      color: #212529 !important;
+      background: #fff !important;
     }
     
     .table a {
@@ -370,9 +387,9 @@
     }
     
     .info-content {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
       height: 100%;
     }
     
@@ -441,14 +458,14 @@
     
     /* 确保内容区域背景色统一 */
     .x_panel {
-      background: #000 !important;
+      background: none !important;
     }
     
     /* 移除所有可能的边距和边框 */
     .main_container {
       margin: 0 !important;
       padding: 0 !important;
-      background: #000 !important;
+      background: #fff !important;
     }
     
     /* 调整主容器样式 */
@@ -511,7 +528,7 @@
     
     /* 信息区域样式 */
     .info-area {
-      height: 30% !important;
+      height: 35% !important;
       background: #1a1a1a;
       margin: 2px !important;
       border-radius: 4px;
@@ -523,7 +540,7 @@
     /* 信息内容布局 */
     .info-content {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 15px;
       height: 100%;
     }
@@ -596,6 +613,25 @@
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
+    
+    /* 添加饼图容器样式 */
+    .chart-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 300px;
+      background: #222;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    
+    .pie-chart {
+      flex: 1;
+      min-height: 250px;
+      width: 100%;
+      position: relative;
+    }
   </style>
 {% endblock stylesheets %}
 
@@ -663,6 +699,7 @@
   {{ block.super }}
   <script src="/static/lib/wsPlayer/mp4box.all.min.js"></script>
   <script src="/static/lib/wsPlayer/wsPlayer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     let eleData = $("#data");
     let ele_top_loading = $("#top_loading");
@@ -674,18 +711,21 @@
     let totalPages = 1;
     let allStreams = [];
     const STREAMS_PER_PAGE = 6;
+    let pieChart = null;
 
     // 修改初始化设置
     $(document).ready(function() {
-        // 默认显示视频网格视图
-        $("#video-view").show().css({
-            'height': '100vh',
-            'padding-top': '50px'
+        $("#video-view").css({
+            'display': 'block',
+            'background': '#000'
         });
         gridView.addClass('active');
         tableView.hide();
         $("#pagination-controls").show();
         f_getOnline();
+        
+        // 设置定时更新
+        setInterval(updateCounts, 5000);
     });
 
     // 修改视图切换函数
@@ -693,54 +733,49 @@
         if (tableView.is(":visible")) {
             // 切换回视频视图
             tableView.hide();
-            $("#video-view").show().css({
-                'height': '100vh',
-                'padding-top': '50px'
+            $("#video-view").css({
+                'display': 'block',
+                'background': '#000'
             });
             gridView.addClass('active');
             $("#pagination-controls").show();
+            // 确保在切换回视频视图时重新初始化饼图
+            setTimeout(() => {
+                if (pieChart) {
+                    pieChart.destroy();
+                }
+                initPieChart();
+                updateCounts();
+            }, 100);
             f_getOnline();
         } else {
             // 切换到表格视图
-            // 先停止所有视频播放
+            // 清理视频相关内容
             Object.values(players).forEach(player => {
                 if (player) player.close();
             });
             players = {};
-            
-            // 清空并隐藏视频视图
             gridView.empty();
+            
             $("#video-view").hide();
             gridView.removeClass('active');
             
             // 显示表格视图
             tableView.css({
                 'display': 'block',
-                'position': 'absolute',
+                'position': 'fixed',
                 'top': '50px',
                 'left': '0',
                 'right': '0',
                 'bottom': '0',
-                'z-index': '1000',
-                'background': '#fff'
+                'background': '#fff',
+                'margin': '0',
+                'padding': '0',
+                'overflow': 'auto'
             });
-            $("#pagination-controls").hide();
             
-            // 获取表格视图数据
-            $.ajax({
-                url: '/stream/getOnline',
-                type: "get",
-                async: true,
-                data: {
-                    view_type: "list"
-                },
-                dataType: "json",
-                success: function(res) {
-                    if (1000 === res.code) {
-                        updateTableView(res.data || []);
-                    }
-                }
-            });
+            $("#pagination-controls").hide();
+            f_getOnline();
         }
     }
 
@@ -807,65 +842,43 @@
         // 添加视频容器
         gridView.append(videoContainer);
         
-        // 添加信息区域，使用实际的活动流数量
+        // 修改信息区域HTML
         const infoArea = $(`
             <div class="info-area">
                 <div class="info-content">
-                    <div class="info-section">
-                        <h4><i class="fa fa-video-camera"></i>视频流统计</h4>
-                        <p>
-                            <span>总视频流数量:</span>
-                            <span>${allStreams.length}</span>
-                        </p>
-                        <p>
-                            <span>当前活动视频流:</span>
-                            <span>${activeStreams}</span>
-                        </p>
-                        <p>
-                            <span>当前页面:</span>
-                            <span>${currentPage} / ${Math.max(1, totalPages)}</span>
-                        </p>
-                        <p>
-                            <span>视频质量:</span>
-                            <span>1080P</span>
-                        </p>
-                    </div>
-                    <div class="info-section performance">
-                        <h4><i class="fa fa-tachometer"></i>系统性能</h4>
-                        <div class="performance-metric">
-                            <span class="metric-label">CPU使用率</span>
-                            <span class="metric-value">${getCPUUsage()}%</span>
-                        </div>
-                        <div class="performance-metric">
-                            <span class="metric-label">内存使用率</span>
-                            <span class="metric-value">${getMemoryUsage()}%</span>
-                        </div>
-                        <div class="performance-metric">
-                            <span class="metric-label">运行时间</span>
-                            <span class="metric-value">${formatUptime()}</span>
-                        </div>
-                        <div class="performance-metric">
-                            <span class="metric-label">网络带宽</span>
-                            <span class="metric-value">${getNetworkBandwidth()}</span>
-                        </div>
+                    <div class="info-section chart-container">
+                        <h4><i class="fa fa-pie-chart"></i>报警类型统计</h4>
+                        <canvas id="alarmPieChart" class="pie-chart"></canvas>
                     </div>
                     <div class="info-section">
-                        <h4><i class="fa fa-info-circle"></i>系统信息</h4>
+                        <h4><i class="fa fa-info-circle"></i>报警信息</h4>
                         <p>
-                            <span>服务器状态:</span>
-                            <span style="color: #4CAF50;">正常运行</span>
+                            <span>报警类型 (BIKE):</span>
+                            <span style="color: #4CAF50;" id="bike_count">0 个</span>
                         </p>
                         <p>
-                            <span>网络状态:</span>
-                            <span style="color: #4CAF50;">连接正常</span>
+                            <span>报警类型 (PERSON):</span>
+                            <span style="color: #4CAF50;" id="person_count">0 个</span>
+                        </p>
+                        <p>
+                            <span>报警类型 (GOGGLE):</span>
+                            <span style="color: #4CAF50;" id="goggle_count">0 个</span>
+                        </p>
+                        <p>
+                            <span>报警类型 (HELMET):</span>
+                            <span style="color: #4CAF50;" id="helmet_count">0 个</span>
+                        </p>
+                        <p>
+                            <span>报警类型 (MEETING):</span>
+                            <span style="color: #4CAF50;" id="meeting_count">0 个</span>
+                        </p>
+                        <p>
+                            <span>报警类型 (REFLECTION):</span>
+                            <span style="color: #4CAF50;" id="reflection_count">0 个</span>
                         </p>
                         <p>
                             <span>最后更新:</span>
-                            <span>${new Date().toLocaleTimeString()}</span>
-                        </p>
-                        <p>
-                            <span>系统版本:</span>
-                            <span>v3.x</span>
+                            <span style="color: #4CAF50;" id="time"></span>
                         </p>
                     </div>
                 </div>
@@ -873,6 +886,16 @@
         `);
         
         gridView.append(infoArea);
+        
+        // 确保DOM已经添加到页面后再初始化饼图
+        setTimeout(() => {
+            if (pieChart) {
+                pieChart.destroy();
+            }
+            initPieChart();
+            updateCounts();
+        }, 100);
+        
         updatePagination();
     }
     
@@ -1020,6 +1043,99 @@
         const bandwidth = Math.floor(Math.random() * 50 + 50);
         return `${bandwidth} Mbps`;
     }
+    function updateCounts() {
+        $.ajax({
+            url: '/stream/get_counts/',
+            type: 'GET',
+            success: function(data) {
+                $('#bike_count').text(data.bike_count + ' 个');
+                $('#person_count').text(data.person_count + ' 个');
+                $('#goggle_count').text(data.goggle_count + ' 个');
+                $('#helmet_count').text(data.helmet_count + ' 个');
+                $('#meeting_count').text(data.meeting_count + ' 个');
+                $('#reflection_count').text(data.reflection_count + ' 个');
+                $('#time').text(data.time);
+                
+                if (pieChart) {
+                    pieChart.data.datasets[0].data = [
+                        data.bike_count,
+                        data.person_count,
+                        data.goggle_count,
+                        data.helmet_count,
+                        data.meeting_count,
+                        data.reflection_count
+                    ];
+                    pieChart.update();
+                }
+            }
+        });
+    }
+
+    function initPieChart() {
+        const ctx = document.getElementById('alarmPieChart').getContext('2d');
+        pieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['自行车', '人员', '护目镜', '安全帽', '聚集', '反光衣'],
+                datasets: [{
+                    data: [0, 0, 0, 0, 0, 0],
+                    backgroundColor: [
+                        '#FF6384',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#4BC0C0',
+                        '#9966FF',
+                        '#FF9F40'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#fff',
+                            padding: 20,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 14
+                        }
+                    }
+                },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 0,
+                        bottom: 0
+                    }
+                }
+            }
+        });
+    }
+
+    // 在文档加载完成后初始化饼图
+    $(document).ready(function() {
+        updateCounts();
+        initPieChart();
+        // 每5秒更新一次数据
+        setInterval(updateCounts, 5000);
+    });
+
   </script>
 {% endblock javascripts %}
 

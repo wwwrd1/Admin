@@ -24,6 +24,7 @@ urlpatterns = [
     path('stream/getOnline', StreamView.api_getOnline),
     path('stream/getAllStartForward', StreamView.api_getAllStartForward),
     path('stream/getAllUpdateForwardState', StreamView.api_getAllUpdateForwardState),
+    path('stream/get_counts/', StreamView.get_counts),
 
 
     path('alarms', AlarmView.web_alarms),
